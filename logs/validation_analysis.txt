@@ -1,0 +1,16 @@
+task  condition  n_pairs  mean_delta  delta_ci_low  delta_ci_high  sign_accuracy  choice_accuracy  order_consistency  perm_p_delta
+plot irrelevant        6    8.666667     -2.500000      18.166667       0.750000         0.666667           0.666667      0.192340
+plot       none        6    2.333333     -7.583333      13.333333       0.416667         0.583333           0.500000      0.810909
+plot    outline        6    0.000000    -10.833333      11.250000       0.500000         0.500000           0.333333      1.000000
+word     anchor       15   16.333333      4.733333      29.100000       0.733333         0.633333           0.400000      0.020199
+word      decoy       30   -3.600000     -6.700000      -0.616667       0.283333         0.433333           0.200000      0.024749
+word irrelevant       30   -0.566667     -4.233333       3.366667       0.466667         0.483333           0.233333      0.790610
+word       none       30   -0.150000     -2.866667       2.400417       0.516667         0.483333           0.100000      0.932453
+word    outline       30   -2.650000     -6.283333       0.716667       0.466667         0.433333           0.266667      0.173241
+          contrast  n  mean_difference    ci_low  ci_high   perm_p
+      outline-none 30        -2.500000 -6.833333 1.850000 0.280336
+outline-irrelevant 30        -2.083333 -7.116667 2.950417 0.418479
+        decoy-none 30        -3.450000 -7.300000 0.217083 0.086196
+    condition  n  mean_delta  sign_accuracy  order_consistency
+random_remove  6  -10.833333       0.166667                0.5
+secret_remove  6  -77.500000       0.000000                1.0

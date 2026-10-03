@@ -1,0 +1,10 @@
+\section{Reproducibility and Additional Details}
+\label{sec:appendix}
+
+\para{Artifacts.} Exact behavioral prompts, context construction, seeds, and generation settings are implemented in \texttt{src/run\_behavioral.py}. Raw stories and judgments are stored under \texttt{results/model\_outputs/}; processed pair-level summaries and residual projections are under \texttt{results/evaluations/}. The dependency lockfile records the full environment. The public repository associated with this study is \url{https://github.com/Hypogenic-AI/llms-are-bad-at-keeping-obvious-secrets-72ad-codex-gpt-5-6-sol}.
+
+\para{Analysis inventory.} The behavioral analysis contains 153 matched pairs and 386 usable order-specific judgments in the stored analysis metadata. The 153 pairs comprise 135 word pairs and 18 plot pairs. Residual measurement contains 720 layer--landmark projections. The intervention pilot contains 12 pair comparisons across six secrets and two removal conditions.
+
+\para{Access failures and exclusions.} OpenRouter catalog access succeeded on October 3, 2026, but generation returned a daily-limit HTTP 403 response. A direct OpenAI credential returned HTTP 401. The \qwen pilot was excluded because only 4 of 22 pairs were order-consistent. These failures were recorded before the confirmatory analysis; no synthetic substitute was introduced.
+
+\para{Interpretive guardrails.} The sign-permutation tests in \tabref{tab:behavior} are descriptive condition-level tests. The two prespecified mitigation contrasts both remain nonsignificant, so no multiplicity correction changes their interpretation. The two-brief design also prevents a well-identified random-effects analysis over briefs. We consequently restrict the conclusion to the tested prompts and model rather than treating a null result as proof of equivalence.

@@ -1,0 +1,46 @@
+\section{Methodology}
+\label{sec:method}
+
+\subsection{Problem formulation and primary endpoint}
+
+For a secret $z$, brief $b$, and context condition $c$, the writer generates a secret-present story $y^+_{zbc}$ and a matched no-secret story $y^-_{zbc}$. A judge receives both texts, the candidate secret, and no indication of which story saw the secret. It assigns each text an influence score from 0 to 100. We present every pair in both orders. If $s^+_{i,o}$ and $s^-_{i,o}$ denote the scores mapped back to the secret-present and control texts for pair $i$ and order $o$, our primary pair-level endpoint is
+\begin{equation}
+    \score_i = \frac{1}{2}\sum_{o\in\{0,1\}}\left(s^+_{i,o}-s^-_{i,o}\right).
+    \label{eq:delta}
+\end{equation}
+Positive values mean the secret-present story appears more influenced by the candidate. Averaging mapped differences algebraically cancels a constant left/right position preference. We also report sign accuracy---the fraction of pairs with $\score_i>0$, counting ties as one half---and whether the judge makes the same binary choice in both orders.
+
+\subsection{Behavioral design}
+
+\para{Word secrets.} We use the 15 published concepts from \citet{holtzman2026secret}: \emph{umbrella, lighthouse, violin, cactus, telescope, justice, patience, entropy, nostalgia, freedom, bracket, Tuesday, copper, margin}, and \emph{invoice}. The \openanchor condition supplies no content brief and serves as a positive control. In the confirmatory factorial, every secret is crossed with two reusable neutral briefs and four contexts:
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+    \item \nooutline: the neutral brief alone;
+    \item \fixedoutline: a fixed, secret-blind outline that specifies the story progression;
+    \item \irrelevant: prose matched to the outline's length but unrelated to the story; and
+    \item \decoy: the fixed-offset decoy construction from the published protocol.
+\end{itemize}
+Each cell contains a secret-present story and a no-secret story generated with matched settings. The anchor contains 15 pairs; each briefed condition contains 30 pairs. This design uses the anchor to verify sensitivity, the irrelevant text to measure context dilution, and the decoy to provide a known redirection yardstick.
+
+\para{Plot secrets.} We additionally construct six heterogeneous hidden twists. A twist-aware writer and a premise-only writer generate matched stories under no outline, a secret-blind outline, and irrelevant context, producing six pairs per condition. The premise-only control is important because a plausible twist may be inferable from the premise even when it is not provided to the writer.
+
+\para{Corpus validity.} The confirmatory corpus contains 306 stories: 240 from the briefed word factorial, 30 from the anchor, and 36 from the plot pilot. We archive but do not analyze 80 additional exploratory stories from extra briefs. No confirmatory output is empty and none literally mentions its secret. Stories contain 369--608 words (mean 534), exceeding the approximate 450-word target because the token-level minimum length delays the end-of-sequence token.
+
+\subsection{Models and generation}
+
+The writer and primary judge are the same local \gemma checkpoint, loaded in BF16 from the Unsloth mirror at revision \texttt{9478e665381f42974aa06177b019352fb6291876}. We sample stories at temperature 0.8 and top-$p$ 0.95 and judge greedily. Generation runs on one NVIDIA RTX A6000 with 49,140 MiB of memory; peak residency is approximately 36 GB. The environment uses Python 3.12.8, PyTorch 2.7.1, and Transformers 4.53.3.
+
+We attempted a cross-family sensitivity judge with \qwen revision \texttt{40c069824f4251a91eefaf281ebe4c544efd3e18}. It produced consistent decisions for only 4 of 22 pilot pairs, so we exclude it under the reliability check rather than mixing it into confirmatory results. Attempts to use external judges also failed before evaluation: OpenRouter returned a daily-limit response and a direct OpenAI credential returned an authorization error. All reported generations and judgments come from actual local models; none are simulated.
+
+\subsection{Statistical analysis}
+
+The pair is the inferential unit. For each condition, we estimate the mean $\score_i$, a 95\% interval from 10,000 pair-level bootstrap resamples, and a two-sided sign-permutation $p$-value. For within-pair condition contrasts, we align cells by secret and brief before bootstrapping and sign permutation. The planned mixed-effects model is not fit because only two confirmatory briefs provide too little information to estimate the proposed brief random effect reliably. We therefore present finite-sample pair-level estimates and avoid population-wide equivalence claims.
+
+\subsection{Residual-stream measurement}
+
+We fit one direction for each secret using four carrier-template pairs. Each pair differs only in whether the template contains the secret or the neutral word \emph{unspecified}. At layers 12, 24, 36, and 47, we average the secret-minus-neutral final-token residual differences and normalize the result. Neither evaluation prose nor judge labels enter direction fitting.
+
+We then measure cosine projection onto the corresponding direction for station-brief stories in the no-outline and outline conditions. Measurements occur at 10\%, 50\%, and 90\% of the generated prose. This yields 720 projections: 15 secrets, two conditions, two secret-presence states, four layers, and three landmarks. A positive secret-present minus control gap would support persistent accessibility along this carrier-defined direction, but not causality.
+
+\subsection{Projection-removal intervention}
+
+For the first six sorted secrets, we regenerate the station/no-outline secret-present story while projecting the next-token residual state orthogonally to the learned secret direction at layers 24 and 36. A seeded, independently sampled unit direction at each layer provides a random-removal control. The writer prompt, decoding settings, and generation seed match the source story. We judge each intervened story against its original no-secret control in both orders. A successful causal result must reduce the behavioral signal more than random removal while preserving basic utility; here, word count and completion behavior provide the minimum utility check.

@@ -1,0 +1,22 @@
+\section{Introduction}
+\label{sec:introduction}
+
+A language model need not repeat a secret to reveal it. When asked to write unrelated prose while holding a forbidden concept, a model can change its setting, imagery, conflicts, or word choices in ways that let a reader infer the hidden concept. This channel matters wherever a model conditions on private context, and it is especially visible in fiction: knowledge of a future event can become unintended foreshadowing long before the event appears.
+
+Prior work shows that this is measurable rather than anecdotal. Secret-aware stories can be distinguished from matched no-secret stories even when the forbidden word never appears \citep{holtzman2026secret}, and unrelated prompt concepts leave semantic traces across models and tasks \citep{gonen2025semantic}. Stronger suppression can even create an inverted but still diagnostic signal \citep{mann2025whitebear,fairoze2026inadvertent}. These findings raise a practical question: can we reduce leakage by separating planning from prose generation?
+
+\para{Why might an outline help?} An external outline fixes future content before prose generation. If leakage arises because the model repeatedly prepares future decisions in its hidden state, conditioning on a secret-blind outline could offload those decisions and reduce secret influence. Explicit plot construction changes narrative generation and quality \citep{xie2024suspenseful}, while future response properties are decodable from residual activations \citep{dong2025emergent}. Yet an outline also adds tokens and narrows the story. Any apparent gain could therefore come from context dilution or constrained content rather than planning itself. A length-matched irrelevant-context condition is necessary to separate these explanations.
+
+We study this question on \gemma with a matched, order-balanced protocol; \figref{fig:behavior} previews the behavioral outcome. We first reproduce the known effect with an open-story anchor. We then cross the same 15 secrets with two neutral briefs and four contexts: no outline, a secret-blind outline, length-matched irrelevant context, and a fixed-offset decoy. Every secret-aware story has a matched no-secret control, and the judge evaluates each pair in both presentation orders. We complement this behavioral experiment with a plot-twist pilot, residual-stream projections on directions learned from independent carrier prompts, and projection-removal interventions with random-direction controls.
+
+The results separate a robust finding from two unsuccessful mechanism tests. The open anchor produces a $+16.33$ point secret influence score (95\% CI $[+4.73,+29.10]$), showing that this checkpoint and endpoint recover the target phenomenon. Once a neutral brief specifies setting, characters, and conflict, however, the no-outline score falls to $-0.15$ (CI $[-2.87,+2.40]$). Adding an outline changes the score by only $-2.50$ points relative to no outline and by $-2.08$ relative to irrelevant context; both intervals cross zero. Residual gaps are tiny and inconsistent. Projection removal produces a large judgment inversion, but it also cuts mean story length from 488 words under random removal to 102 words, so the intervention fails its utility criterion.
+
+Our contributions are:
+\begin{itemize}[leftmargin=*,itemsep=0pt,topsep=0pt]
+    \item We conduct a controlled outline experiment with matched no-secret stories, an open positive anchor, a length-matched context control, and a decoy yardstick.
+    \item We show that a neutral content brief eliminates detectable word leakage in this setup before an outline is introduced, identifying content-choice freedom as a key moderator.
+    \item We extend the protocol to plot secrets and generation-time residual measurements, and report their null or underpowered outcomes without converting them into equivalence claims.
+    \item We test projection removal against random directions and show why a large behavioral inversion is not causal evidence when generation quality collapses.
+\end{itemize}
+
+\Secref{sec:related} positions the study relative to leakage, planning, and secret-elicitation work. \Secref{sec:method} describes the behavioral and mechanistic protocols, \secref{sec:results} reports the evidence, and \secref{sec:discussion} states the supported conclusion and its limits.

@@ -1,0 +1,23 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\para{What does the behavioral result show?} The clearest pattern is a transition from positive leakage under an open prompt to no detectable leakage once a neutral brief constrains the story. The brief fixes the setting, protagonists, and central conflict---precisely the high-level choices through which a hidden concept can most easily shape a story. This supports content-choice freedom as a critical moderator. It does not show that briefs erase private information from the model; they may simply close the behavioral channel through which that information affected the sampled text.
+
+\para{Did planning offload help?} We cannot answer cleanly because the no-outline briefed condition already lies at the measurement floor. The outline estimate is lower than no outline, but its confidence interval includes both a modest reduction and a modest increase. More importantly, the outline does not outperform length-matched irrelevant context. The study therefore provides no positive evidence that structured planning, as opposed to content constraint or added context, caused the reduction. A better design must use broad premises that preserve substantial anchor leakage while leaving enough decisions for an outline to resolve.
+
+\para{What do the mechanism experiments show?} The residual analysis shows that a simple direction learned from carrier sentences does not track a stable secret-present gap during prose. This is evidence against that particular linear measurement, not against all internal representations of the secret. The intervention demonstrates an equally important negative lesson: a large behavioral effect is not enough for a causal claim. Removing projections at two layers changes the generation process so severely that selective interpretation is impossible. Mechanistic work on secret leakage needs both matched causal controls and strict utility gates.
+
+\subsection{Limitations}
+
+First, we evaluate one writer checkpoint and one usable judge, and both roles use the same model family. The cross-family judge failed its pilot reliability check, external APIs were unavailable, and we did not conduct a human audit. Second, the primary briefed conditions contain only 30 pairs, and each plot condition contains six; the resulting intervals do not establish equivalence. Third, Gemma's 10--40\% order consistency in word conditions is poor. The mapped score reduces position bias but cannot eliminate unstable semantic judgments.
+
+Fourth, the brief-induced floor prevents the intended test from starting with detectable leakage. Fifth, generation lengths exceed the target because a token minimum delayed termination, which may change both narrative structure and judging. Sixth, the carrier directions are linear and template-dependent, and we do not train a held-out-secret classifier or test alternative erasure methods. Seventh, projection removal causes catastrophic length loss, invalidating the causal endpoint. Finally, all intervals describe this fixed set of secrets, briefs, prompts, seeds, model weights, and judging procedure; they do not justify generalization across models.
+
+We rate the evidence as moderate for the open anchor and the descriptive brief-induced floor, low for outline equivalence or advantage, and very low for plot-level and causal claims.
+
+\subsection{Broader implications}
+
+These results suggest that nonliteral leakage evaluations should vary how much freedom a task gives the model. A mitigation that appears effective on a tightly specified output may fail when the model chooses its own topic, setting, or examples. Conversely, more privacy language is not necessarily safer: avoidance can itself encode the protected concept \citep{holtzman2026secret,fairoze2026inadvertent}. Evaluations should therefore include no-secret controls, decoys, irrelevant-context controls, order balancing, and utility measures.
+
+For narrative systems, the practical near-term implication is narrower. Supplying a neutral brief may reduce detectable thematic influence on this model, but the result does not establish a general confidentiality mechanism. Developers should not treat a public outline as private memory or as proof that hidden context has been removed. For mechanistic interventions, preservation of length, coherence, and task completion should be a prerequisite rather than a secondary diagnostic.
+

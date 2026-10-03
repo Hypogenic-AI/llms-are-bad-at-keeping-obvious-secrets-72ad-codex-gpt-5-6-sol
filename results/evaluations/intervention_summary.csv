@@ -1,0 +1,3 @@
+condition,n,mean_delta,sign_accuracy,order_consistency
+random_remove,6,-10.833333333333334,0.16666666666666666,0.5
+secret_remove,6,-77.5,0.0,1.0

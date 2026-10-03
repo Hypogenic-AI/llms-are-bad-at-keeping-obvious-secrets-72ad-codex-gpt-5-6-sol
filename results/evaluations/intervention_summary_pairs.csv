@@ -1,0 +1,13 @@
+pair_id,task,condition,secret,brief,case,delta,sign_score,order_consistent,choice_acc
+intervene::Tuesday::station::secret_remove,word,secret_remove,Tuesday,,,-82.5,0,True,0.0
+intervene::Tuesday::station::random_remove,word,random_remove,Tuesday,,,-20.0,0,True,0.0
+intervene::bracket::station::secret_remove,word,secret_remove,bracket,,,-80.0,0,True,0.0
+intervene::bracket::station::random_remove,word,random_remove,bracket,,,-20.0,0,True,0.0
+intervene::cactus::station::secret_remove,word,secret_remove,cactus,,,-85.0,0,True,0.0
+intervene::cactus::station::random_remove,word,random_remove,cactus,,,-20.0,0,True,0.0
+intervene::copper::station::secret_remove,word,secret_remove,copper,,,-70.0,0,True,0.0
+intervene::copper::station::random_remove,word,random_remove,copper,,,-5.0,0,False,0.5
+intervene::entropy::station::secret_remove,word,secret_remove,entropy,,,-67.5,0,True,0.0
+intervene::entropy::station::random_remove,word,random_remove,entropy,,,-2.5,0,False,0.5
+intervene::freedom::station::secret_remove,word,secret_remove,freedom,,,-80.0,0,True,0.0
+intervene::freedom::station::random_remove,word,random_remove,freedom,,,2.5,1,False,0.5

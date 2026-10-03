@@ -1,0 +1,634 @@
+You are an academic paper writer. Generate a complete NEURIPS style paper
+based on the experiment results provided.
+
+════════════════════════════════════════════════════════════════════════════════
+                         IMPORTANT: BEFORE YOU START
+════════════════════════════════════════════════════════════════════════════════
+
+Before writing any content, you MUST complete these steps:
+
+1. READ THE SKILL: Review the paper-writer skill at .codex/skills/paper-writer/SKILL.md
+2. READ THE STYLE GUIDE: Study templates/paper_writing/lab_style_guide.md carefully
+3. REVIEW EXAMPLES: Browse paper_examples/ for formatting and language patterns:
+   - Look at sections/1.introduction.tex for language style
+   - Look at tables/*.tex for table formatting
+   - Look at commands/*.tex for macro usage
+4. VERIFY COMMAND TEMPLATES: Command templates (math.tex, general.tex, macros.tex) are pre-copied to paper_draft/commands/
+
+CRITICAL: Reference example papers for FORMATTING and LANGUAGE STYLE only.
+Do NOT copy content, phrasing, or narrative structure from the example papers.
+The examples are in a different research domain - focus only on presentation style.
+
+════════════════════════════════════════════════════════════════════════════════
+                            EXPERIMENT REPORT
+════════════════════════════════════════════════════════════════════════════════
+
+# LLMs Are Bad at Keeping Obvious Secrets
+
+## 1. Executive Summary
+
+We tested whether an explicit outline reduces involuntary secret leakage and whether secret-aligned residual activity explains it. On local Gemma 3 12B, an unconstrained open-story anchor replicated leakage: the secret-aware story received a **+16.3 point** higher order-balanced influence score than its no-secret control (15 pairs, 95% bootstrap CI **+4.7 to +29.1**, permutation **p=.020**). However, a neutral story brief removed the detectable signal before an outline was added (no-outline mean −0.15, CI −2.87 to +2.40). The outline contrast was inconclusive: outline minus no outline was −2.50 (30 pairs, CI −6.83 to +1.85, p=.280), and outline minus length-matched irrelevant context was −2.08 (CI −7.12 to +2.95, p=.418).
+
+The defensible conclusion is that **content constraints, not demonstrated planning offload, eliminated detectable word leakage here**. Plot-twist trials were underpowered and null. Carrier-prompt directions showed tiny, inconsistent secret/no-secret projection gaps. Projection removal strongly inverted judgments, but catastrophically shortened stories (mean 102 versus 488 words for random removal), so it does not establish selective causality.
+
+## 2. Research Question & Motivation
+
+Holtzman and West (2026) showed that frontier models leak forbidden words into unrelated stories, but did not test plans, plot secrets, or internals. We ask whether an external outline offloads future decisions and whether leakage is mediated by a persistent secret representation. A length-matched irrelevant-context condition separates planning from context dilution.
+
+## 3. Experimental Setup
+
+### Models, compute, and access
+
+- Writer and primary judge: `google/gemma-3-12b-it`, local Unsloth mirror revision `9478e665381f42974aa06177b019352fb6291876`, BF16.
+- Failed cross-family sensitivity judge: `Qwen/Qwen3-14B`, revision `40c069824f4251a91eefaf281ebe4c544efd3e18`.
+- NVIDIA RTX A6000 (49,140 MiB); peak generation residency about 36 GB.
+- Python 3.12.8, PyTorch 2.7.1, Transformers 4.53.3; full versions in `pyproject.toml`/`uv.lock`.
+- OpenRouter was catalog-verified on 2026-10-03 but returned a daily-limit 403; the direct OpenAI key returned 401. All reported outputs are from real local models, never simulations.
+
+### Data and protocol
+
+All 15 published secrets were crossed with two neutral briefs and four contexts: no outline, secret-blind outline, length-matched irrelevant context, and the paper's fixed-offset decoy. Each secret story had a matched no-secret story. A separate open anchor used no brief. Six plot twists used twist-aware versus premise-only writers under no outline, outline, and irrelevant context.
+
+There were **306 confirmatory stories** plus 80 archived extra-brief exploratory stories. There were zero literal secret mentions and zero empty outputs. Word count was 369–608 (mean 534), above target because the token minimum delayed EOS. Exact prompts and seeds are in `src/run_behavioral.py`. Sampling used temperature .8/top-p .95; judging was greedy.
+
+Every pair was judged in both orders with per-text 0–100 scores. The primary endpoint maps both orders to `secret-present score − control score` and averages them, algebraically cancelling position bias. We report pair-level 10,000-sample bootstrap intervals and two-sided sign-permutation tests. The intended mixed model was not used because only two confirmatory briefs poorly identify its random effects.
+
+## 4. Results
+
+| Task | Condition | Pairs | Mean score difference | 95% CI | Sign accuracy | p |
+|---|---|---:|---:|---:|---:|---:|
+| Word | Open anchor | 15 | **+16.33** | **[+4.73, +29.10]** | 73.3% | .020 |
+| Word | No outline | 30 | −0.15 | [−2.87, +2.40] | 51.7% | .932 |
+| Word | Outline | 30 | −2.65 | [−6.28, +0.72] | 46.7% | .173 |
+| Word | Irrelevant context | 30 | −0.57 | [−4.23, +3.37] | 46.7% | .791 |
+| Word | Decoy | 30 | **−3.60** | **[−6.70, −0.62]** | 28.3% | .025 |
+| Plot | No outline | 6 | +2.33 | [−7.58, +13.33] | 41.7% | .811 |
+| Plot | Outline | 6 | 0.00 | [−10.83, +11.25] | 50.0% | 1.000 |
+| Plot | Irrelevant | 6 | +8.67 | [−2.50, +18.17] | 75.0% | .192 |
+
+![Behavioral score differences](figures/behavior_delta.png)
+
+The anchor shows the checkpoint and endpoint can recover the known effect. The brief then causes a floor. Outline minus no-outline was −2.50 [−6.83, +1.85], p=.280; outline minus irrelevant was −2.08 [−7.12, +2.95], p=.418. Decoy inversion qualitatively reproduces the published yardstick.
+
+Judge reliability was limited: Gemma order consistency was 10–40% for word conditions. Qwen achieved only 4/22 consistent pilot pairs and was excluded. Order-mapped scores reduce position bias, but instability remains the dominant measurement limitation.
+
+### Residual stream
+
+Directions were fitted from four independent carrier pairs per secret, never evaluation prose or labels. We projected layers 12/24/36/47 at 10%/50%/90% of prose. Gaps were tiny and inconsistent. The largest mean secret-control gap was +.0132 at layer 47/late without an outline; the outlined gap there was −.00144.
+
+![Residual trajectory](figures/residual_trajectory.png)
+
+This does not support persistent carrier-defined activation, but cannot rule out distributed or context-dependent secret representations.
+
+### Causal intervention
+
+For six secrets, we projected out the carrier direction at layers 24 and 36; seeded random directions were controls. Secret removal produced mean judged delta −77.5, 0/6 positive signs, and 6/6 order-consistent inversions, versus −10.8 and 1/6 positives for random removal. But secret-removal stories averaged **102 words** (range 9–354), versus **488** (466–502) for random removal. The intervention caused severe generic damage, fails the utility criterion, and cannot demonstrate selective causal removal.
+
+Raw outputs are in `results/model_outputs/`, processed results in `results/evaluations/`, and figures in `figures/`.
+
+## 5. Discussion
+
+The positive open anchor and null briefed condition indicate that unconstrained content selection is a major leakage carrier. A brief already fixes setting, characters, and conflict—the same choices an outline further specifies. This floor is informative but prevents a clean test of planning offload once leakage is present. The outline did not outperform irrelevant context; this rejects a strong benefit claim in this setup, but its interval allows modest benefit or harm.
+
+Plot results are inconclusive: six heterogeneous twists provide little power. The residual/intervention results caution against equating a templated mean-difference direction with the causal representation.
+
+## 6. Limitations
+
+- One writer and one usable primary judge; cross-family judging failed reliability checks.
+- 30 word pairs and only six plot pairs per condition.
+- Severe judge order instability, reduced but not eliminated by score mapping.
+- Brief-induced floor; output lengths above target.
+- Carrier directions were linear/template-dependent; intervention severely degraded utility.
+- API failure prevented frontier-judge replication and a human audit.
+- Intervals do not generalize over models.
+
+Evidence quality is **moderate** for the anchor and brief-induced floor, **low** for outline equivalence, and **very low** for plot and causal claims.
+
+## 7. Conclusions & Next Steps
+
+Gemma 3 12B leaked secret words when story content was unconstrained, but leakage disappeared when a neutral brief fixed content. Adding an outline did not improve on either the brief or irrelevant context. This run therefore identifies content-choice freedom as a critical moderator rather than demonstrating planning offload.
+
+Follow-up should screen broad premises that retain 65–80% anchor discrimination, use 100+ pairs per condition with two calibrated judges and blinded humans, scale premise-calibrated twists, and learn causal subspaces with LEACE/INLP on disjoint secrets while rejecting any intervention that materially alters length or coherence.
+
+## References
+
+Holtzman & West (2026), arXiv:2605.10794; Gonen et al. (2025), arXiv:2408.06518; Cywiński et al. (2025), arXiv:2505.14352/2510.01070; Dong et al. (2025), arXiv:2502.06258; Wu et al. (2024), arXiv:2404.00859; Mann et al. (2025), arXiv:2511.12381; Xie & Riedl (2024), arXiv:2402.17119; Fairoze et al. (2026), arXiv:2608.19857.
+
+
+════════════════════════════════════════════════════════════════════════════════
+                            RESEARCH PLAN
+════════════════════════════════════════════════════════════════════════════════
+
+# Research Plan
+
+## Motivation & Novelty Assessment
+
+### Why This Research Matters
+
+Subtle thematic leakage can disclose private context or spoil future plot events even when a model never repeats the protected words. Separating planning from prose could offer a cheap mitigation, while a causal account would distinguish genuine information removal from avoidance patterns that remain decodable.
+
+### Gap in Existing Work
+
+Holtzman and West (2026) establish behavioral secret-word leakage but do not test explicit plans, plot-level twists, or internals. Planning-probe and Taboo work shows future attributes and trained-in secrets are decodable, but has not linked naturally prompted secret representations to unrelated story prose or causally removed them. No reviewed work controls the extra-context dilution introduced by an outline.
+
+### Our Novel Contribution
+
+We test whether a secret-blind external outline reduces leakage beyond a length-matched irrelevant-context control, benchmark the effect against a decoy, and add plot-twist/no-secret controls. On the same open model, we measure secret-aligned residual activity during prose and intervene on that direction during generation, with norm-matched random controls and utility checks.
+
+### Experiment Justification
+
+- **Experiment 1 — behavioral factorial:** establishes the positive leakage anchor and isolates structured planning from mere context dilution; the decoy provides a published-effect yardstick.
+- **Experiment 2 — representation trajectory:** tests whether secret information remains accessible throughout prose and whether its strength covaries with behavioral leakage. Decodability alone is explicitly treated as correlational.
+- **Experiment 3 — causal removal:** tests the strongest mechanism claim by asking whether subtracting secret-aligned residual components lowers leakage without nonspecific quality collapse.
+- **Plot-level pilot:** tests whether conclusions extend beyond isolated words while a premise-only/no-secret control measures twist guessability.
+
+## Research Question
+
+When Gemma 3 12B writes a roughly 450-word story while holding a forbidden secret, does an externally supplied outline reduce order-balanced 2AFC leakage beyond an equally long irrelevant context, and is any change associated with—and causally dependent on—secret-aligned residual-stream activity?
+
+## Background and Motivation
+
+The primary behavioral phenomenon is already known at 12B+ scale, so a replication alone has little value. The decisive contribution is a controlled plan manipulation plus white-box measurement on a model large enough to avoid the documented floor effect. The study uses the original 15 words for comparability and reports pilot-scale uncertainty rather than generalizing beyond the tested model and prompts.
+
+## Hypothesis Decomposition
+
+- **H1 (anchor):** secret/no-outline stories are discriminable from matched no-secret stories above 50%.
+- **H2 (offloading):** secret-blind outlines lower discrimination relative to no outline and relative to length-matched irrelevant context.
+- **H3 (decoy yardstick):** decoy context redirects or lowers real-secret evidence, giving a known mitigation comparison.
+- **H4 (representation):** secret-aligned activation remains positive during prose and trial-level strength predicts judge correctness/confidence.
+- **H5 (causality):** projection removal lowers both activation alignment and behavioral leakage more than norm-matched random removal while preserving narrative utility.
+- **H6 (plot twist):** a hidden twist leaks above its premise-only control; a secret-blind outline reduces that excess.
+
+Independent variables are secret presence, outline condition, presentation order, and intervention. Primary dependent variable is 2AFC correctness; secondary variables are judge confidence, exact mention rate, length, coherence, adherence, and residual alignment.
+
+## Proposed Methodology
+
+### Approach
+
+Use the exact open-weight model family previously reported to leak strongly. Generate matched secret/no-secret stories from reusable neutral briefs under four contexts: none, secret-blind outline, length-matched irrelevant prose, and decoy. Evaluate with a different-family frontier judge in both A/B orders. Reuse the same prompts locally for residual collection and controlled intervention.
+
+### Experimental Steps
+
+1. Validate the local 12B model and prompts on a small anchor set; stop scale-up only if literal secret mentions make the protocol invalid.
+2. Cross the 15 published secrets with reusable briefs and four conditions, using deterministic recorded seeds and matched control seeds.
+3. Judge every pair in both presentation orders with structured JSON, cache all raw requests/responses, and score order agreement and position bias.
+4. Run a small plot-twist extension with no-secret/premise-only controls.
+5. Extract selected-layer residual states at prompt end and prose landmarks; define concept directions from independent carrier sentences, never from evaluation prose.
+6. Intervene during prose generation by projection subtraction in preregistered middle/late layers; compare secret-direction and random-direction interventions on a subset.
+7. Analyze and rerun key deterministic processing to verify reproducibility.
+
+### Baselines
+
+Chance (50%), matched no-secret outputs, no-outline positive anchor, length-matched irrelevant context, and decoy context. Mechanistic controls are no intervention, norm-matched random direction, and quality/length checks. Plot twists use premise-only/no-twist controls.
+
+### Evaluation Metrics
+
+Primary: order-balanced pair accuracy, Wilson 95% CI, order-consistent accuracy, and exact binomial test versus 0.5. Comparisons: paired accuracy differences with cluster bootstrap by secret and paired permutation/McNemar tests where appropriate. Secondary: position bias, order disagreement, judge confidence, literal mentions, word count, refusal, coherence, and plan adherence. Mechanism: normalized projection on the independent secret direction by layer/time and intervention effect on leakage and utility.
+
+### Statistical Analysis Plan
+
+The preregistered primary contrast is outline minus no-outline; the dilution contrast is outline minus irrelevant context. Two-sided alpha is .05 with Holm correction across the two primary mitigation comparisons. Confidence intervals are clustered by secret. Layer/time scans are descriptive unless corrected with Benjamini–Hochberg. Because API judgments in opposite orders are repeated measures, the pair—not each order—is the inferential unit; both orders quantify bias. Any underpowered pilot result will be labeled exploratory.
+
+## Expected Outcomes
+
+H1 is supported by an anchor CI mostly above chance. H2 requires a negative outline effect that is also lower than irrelevant context; equality with irrelevant context supports dilution rather than planning offload. H4 requires persistent alignment plus a positive trial-level association. H5 requires a selective reduction versus random intervention without material quality loss. Null, inverted, and quality-confounded outcomes are reportable findings.
+
+## Timeline and Milestones
+
+1. Planning and environment/model validation (20%).
+2. Behavioral generation and cached judging (35%).
+3. Activation/intervention pilot (25%).
+4. Statistical analysis, figures, documentation, rerun validation (20%).
+
+## Potential Challenges
+
+- Model download/tooling failure: use the ungated `unsloth/gemma-3-12b-it` or OpenRouter behavioral endpoint and document why white-box work is reduced.
+- Anchor floor: retain the documented 12B model; do not silently substitute a smaller model.
+- Outline dilution: the length-matched irrelevant context is mandatory.
+- Judge noise/bias: both candidate orders, structured parsing, order-agreement reporting, and cluster-level inference.
+- Literal disclosure: flag and report separately; do not count it as subtle leakage.
+- Intervention damage: random-direction and utility controls; no causal claim if quality collapses.
+
+## Success Criteria
+
+The research cycle succeeds if it produces real-model outputs, an order-balanced behavioral comparison with uncertainty, at least a validated white-box representation or intervention pilot, complete raw artifacts/prompts/configuration, and conclusions calibrated to the achieved sample size. Scientific success does not require a positive hypothesis result.
+
+## Research Direction Ranking
+
+Scores use a 1–5 scale. The total weights literature support (25%), hypothesis relevance (30%), expected information gain (25%), and implementation feasibility (20%). The search space is frozen to the top three directions below unless new evidence invalidates this ranking.
+
+| Rank | Direction | Literature | Relevance | Information gain | Feasibility | Weighted total | Decision |
+|---:|---|---:|---:|---:|---:|---:|---|
+| 1 | Causal behavioral outline experiment | 5 | 5 | 5 | 5 | 5.00 | Keep |
+| 2 | Tokenwise secret-representation mediation | 4 | 5 | 5 | 4 | 4.55 | Keep |
+| 3 | Causal representation removal/steering | 4 | 5 | 5 | 3 | 4.35 | Keep |
+| 4 | Broad model-size scaling survey | 4 | 3 | 3 | 2 | 3.10 | Reject: expensive and mostly replicates established scaling results before testing the outline mechanism |
+| 5 | Fine-tune models to keep secrets | 3 | 3 | 3 | 2 | 2.80 | Reject: training introduces capability and data confounds; mitigation is premature before mechanism identification |
+| 6 | Multi-turn private-memory architecture | 4 | 2 | 3 | 2 | 2.75 | Reject: tests persistent hidden state, not whether a public outline offloads prose planning |
+| 7 | Ironic-rebound next-token benchmark | 4 | 3 | 2 | 4 | 3.20 | Reject as a standalone direction: useful supporting diagnostic, but not the story-level outcome in the hypothesis |
+| 8 | Large human creative-writing study first | 3 | 4 | 3 | 2 | 3.10 | Reject for the first pass: costly and slow; use blinded model judges plus a small human validation after effect sizing |
+
+## Direction 1 — Causal Behavioral Outline Experiment
+
+Use a within-secret factorial design with identical story briefs and decoding settings:
+
+1. no outline;
+2. externally supplied secret-blind outline;
+3. externally supplied secret-aware outline;
+4. model-generated outline;
+5. decoy-outline control;
+6. no-secret control.
+
+The crucial comparison is no outline versus a secret-blind fixed outline. It tests the offloading hypothesis without adding a second exposure to the secret. Secret-aware and self-generated outlines identify whether planning helps because it structures prose or hurts because it entangles the secret with the plan. Primary outcome: order-balanced, blinded 2AFC secret identification on held-out stories, with exact/free secret guesses and semantic similarity as secondary outcomes. Measure coherence, plan adherence, suspense, and style so suppression cannot masquerade as success by destroying story quality.
+
+Evidence: Holtzman and West (2026) establish story-level leakage and appropriate controls; Gonen et al. (2025) validate matched semantic-leakage measurement; Xie and Riedl (2024) show explicit iterative plots improve suspense and consistency; ConfAIde shows privacy prompts can trade off with utility.
+
+## Direction 2 — Tokenwise Secret-Representation Mediation
+
+On an open-weight instruction model, collect residual-stream activations at prompt end, outline tokens, and fixed prose-generation landmarks. Train cross-validated probes to identify the secret from held-out secret classes, with shuffled-label, prompt-only, lexical-overlap, and random-direction controls. Test the preregistered mediation chain:
+
+`outline condition → secret decodability during prose → behavioral leakage`.
+
+Estimate decodability trajectories per layer and token position, and relate trial-level probe scores to story leakage while controlling for story length, outline adherence, and secret frequency. Treat probe success as accessibility, not causality.
+
+Evidence: Dong et al. (2025) demonstrate future-response decodability and its temporal profile; Cywiński et al. (2025) show hidden secrets are recoverable with logit-lens/SAE methods; Wang et al. (2026) warn that behaviorally probed internal states can drift; Wu et al. (2024) distinguish deliberate pre-caching from ordinary breadcrumbs.
+
+## Direction 3 — Causal Representation Removal/Steering
+
+Learn a secret subspace on disjoint training secrets, then intervene only during prose generation using at least two methods (for example, mean-difference projection removal and LEACE/INLP-style erasure). Compare with norm-matched random subspaces, unrelated-concept removal, sign-reversed steering, and prompt-level no-secret controls. Evaluate whether intervention lowers both probe decodability and 2AFC leakage while preserving plan adherence and prose quality. Apply interventions across layer/time windows to localize when secret information is causally used.
+
+This direction answers the strongest mechanism claim: whether removing the active concept removes leakage. It should follow the behavioral and correlational studies because aggressive erasure can damage generation nonspecifically.
+
+Evidence: the elicitation papers show recoverable secret representations but remain largely correlational; White Bear provides a narrow head-ablation precedent; inadvertent-context leakage links suppression to detectable output distortions but does not manipulate internal representations.
+
+## Minimal First Experiment
+
+- Secrets: 30–50 concrete concepts, balanced by semantic category and tokenization.
+- Story briefs: at least 8 per secret, crossed across conditions.
+- Generation model: one open-weight 7–14B instruction model for white-box work; add one frontier API model only for behavioral replication.
+- Leakage: order-balanced 2AFC judges from at least two model families; exact secret guess; embedding score; preregistered human audit subset.
+- Statistics: mixed-effects logistic regression with fixed effects for outline condition and order, random intercepts for secret and brief; report bootstrap confidence intervals and false-discovery correction for layer/time scans.
+- Split discipline: hold out secrets—not merely outputs—when fitting probes or leakage classifiers.
+
+
+════════════════════════════════════════════════════════════════════════════════
+                          LITERATURE REVIEW
+════════════════════════════════════════════════════════════════════════════════
+
+# Literature Review
+
+## Review Scope
+
+**Research question.** When an LLM writes while holding a secret it must not reveal, does an explicit outline reduce nonliteral leakage, and is any reduction mediated by—then causally dependent on—the secret's internal representation during prose generation?
+
+**Inclusion criteria.** English-language work from 2023–2026 was included if it (a) measures unintended semantic/contextual influence on generation, (b) probes or intervenes on latent secret/future-response information, (c) separates narrative planning from realization, or (d) provides a directly reusable privacy/rebound benchmark. All ten user-specified papers were mandatory.
+
+**Exclusion criteria.** Training-data memorization, ordinary jailbreak/prompt extraction, generic privacy surveys, and planning papers without measurable generation-state or story relevance were excluded. Closely duplicative follow-ups were screened out when they added neither a new mechanism nor reusable resource.
+
+**Sources.** Paper-finder was attempted first, followed by arXiv/API search, author and GitHub pages, reference chasing, and targeted web search across Semantic Scholar/Papers with Code/Google Scholar discovery surfaces. Official paper and repository pages were used for final metadata.
+
+## Search Log
+
+| Date | Query/source | Result | Decision |
+|---|---|---|---|
+| 2026-10-03 | Paper-finder diligent: “large language models secret leakage fiction foreshadowing outline planning generation” | HTTP 500 twice; 0 returned | Recorded failure; manual fallback |
+| 2026-10-03 | Ten supplied arXiv IDs via arXiv API | 10 records | All included and full-text screened |
+| 2026-10-03 | “semantic leakage language models” / arXiv and web | Gonen et al. plus a small-model follow-up | Included foundational Gonen et al.; excluded redundant scaling follow-up |
+| 2026-10-03 | “inadvertent context leakage language models” / recent arXiv | Fairoze et al. (August 2026) | Included; direct post-specification evidence |
+| 2026-10-03 | Paper references and “response planning activations”, “ironic negation”, “story iterative planning” | Probe, rebound, and narrative-planning lines | Relevant papers already covered by supplied set; official code located |
+
+## Screening Results
+
+| Group | Title | Abstract | Full text | Outcome |
+|---|---|---|---|---|
+| 10 supplied papers | Include | Include | Include | Mandatory and directly/adjacently relevant |
+| Gonen et al., semantic leakage | Include | Include | Include | Added as foundational behavioral baseline |
+| Fairoze et al., inadvertent context leakage | Include | Include | Include | Added as closest new mechanism/threat-model result |
+| Smilga, *Scaling Down Semantic Leakage* | Maybe | Include | Not required | Excluded: primarily repeats size comparison; low marginal information for outline mechanism |
+| Prompt injection/training-data extraction literature | Maybe | Exclude | — | Different threat model: deliberate extraction or memorization |
+| General story-generation/planning surveys | Maybe | Exclude | — | No secret-leakage or internal-state test |
+
+## Research Area Overview
+
+The target phenomenon is narrower than ordinary prompt extraction or direct privacy failure. A model can obey the literal instruction not to say a secret while allowing that secret to influence topic, imagery, wording, length, or other output statistics. Three adjacent literatures converge on this problem: behavioral semantic leakage, latent-knowledge/response-planning probes, and narrative planning. Together they support the hypothesis that a secret may remain active throughout generation, but they do not yet test whether an external outline reduces leakage by offloading future preparation, nor whether causally removing the secret representation removes the leak.
+
+Holtzman and West (2026) provide the closest behavioral result. They give models a secret word, ask them not to reveal it, and use another model in an order-balanced binary discrimination task to infer the secret from stories. The secret never appears literally, yet five frontier models leak thematically at rates up to 79.3%. Stronger “actively hide it” instructions reverse the signal below chance because systematic avoidance is itself diagnostic; a decoy redirects some signal. Leakage disappears in short stock jokes, implicating open-ended content choice rather than inevitable token copying. The paper does not manipulate story planning or model internals.
+
+Gonen et al. (2025) establish the broader category of semantic leakage: unrelated prompt concepts affect completions more than matched controls. Their 109-example suite yields significant leakage in 13 GPT/Llama variants and in multilingual, cross-lingual, story, and recipe settings. Human agreement is high enough to validate the effect, while embedding metrics only moderately track item-level judgments. This motivates matched controls and human/model 2AFC evaluation, but it does not involve an instruction to keep a secret.
+
+Fairoze et al. (2026), published after the primary story-leakage paper, show that benign outputs can encode protected in-context values through model-specific statistical channels. Adaptive black-box decoders recover two-digit secrets perfectly for some models and four-digit secrets at 82% exact match. The authors propose suppression-induced probability redistribution: a model avoids the protected value, producing a value-dependent output distribution. Suppression correlates with leakage across eight models (rho 0.95), and more emphatic confidentiality instructions can worsen recovery. This is strong evidence that “trying not to say X” can preserve or amplify an X-dependent channel, though the main controlled task is numeric and adversarial decoding is trained per model.
+
+## Key Papers
+
+### Behavioral Leakage and Privacy
+
+**Holtzman & West (2026), “Can You Keep a Secret?”** The study crosses 15 secrets with story, essay, and joke tasks under secret-present, no-secret, active-hiding, and decoy controls. Leakage is scored through blinded 2AFC discrimination with both candidate orders, binomial testing, and multiple-comparison correction. Cross-model judge transfer and within-family scaling argue against a single evaluator artifact. Key limitations are a small secret set, reliance on model judges, and no released code link in the inspected v1 PDF. It defines the primary behavioral endpoint for this project.
+
+**Mireshghallah et al. (2023), ConfAIde.** Four tiers move from sensitivity ratings to contextual norms, theory-of-mind sharing, and meeting summaries. Tier 3 contains 270 synthetic scenarios and Tier 4 contains 20 transcripts. GPT-4 leaks in 22% of Tier-3 generations and produces inappropriate flows in 39% of Tier-4 summaries; a chain-of-thought prompt slightly worsens both leakage and utility. Low annotation agreement on some norm judgments (Krippendorff alpha 0.07–0.34) warns that privacy evaluation can be subjective. ConfAIde is best used as a transfer and utility benchmark, since it measures explicit contextual disclosure rather than subtle thematic influence.
+
+**Mann et al. (2025), White Bear.** ReboundBench has 5,000 templated negation prompts plus 500 matched multi-question prompts. It measures forbidden-token log probability after semantic, syntactic, or repetitive distractors. Semantic load generally strengthens rebound, while repetition can support suppression. Attention-head ablations on Llama-3-8B-Instruct suggest a sparse middle-layer contribution. The outcome is next-token salience, not story leakage, and the causal result is narrow; the matched positive/neutral/negative controls remain valuable.
+
+**Fairoze et al. (2026), Inadvertent Context Leakage.** Six decoder strategies combine frequency statistics and Qwen LoRA classifiers, with shuffled-label controls. The work also tests digit-stripped length/style/embedding channels, confidentiality wording, co-present distractors, and semantic predicates over user memories. It provides a strong threat-model and split discipline, but trained adaptive attackers answer a different question from ordinary reader-perceived foreshadowing. Its main lesson is to evaluate suppression and active hiding as potentially informative channels, not merely mitigations.
+
+### Internal State, Secret Elicitation, and Planning
+
+**Cywiński et al. (2025), latent knowledge.** Gemma-2-9B models are QLoRA-trained to play Taboo while hiding one of 20 single-token secrets. An external model reaches 95% Pass@10 guessing, postgame token forcing reaches 70%, final-layer logit lens reaches 75% top-5, and Gemma Scope SAE features reach 55% top-5. These results demonstrate accessible secret information but rely on a small, fine-tuned model organism and manually mapped SAE features.
+
+**Cywiński et al. (2025), Eliciting Secret Knowledge.** The expanded benchmark uses three model-organism families: Taboo, secret-selection/concealment, and user-gender knowledge. Prefill attacks often exceed 95% on the latter two settings; logit-lens and SAE methods consistently beat input/output baselines but are weaker. For Taboo, activation-token elicitation reaches 85.1% versus 42.1% for ordinary input/output elicitation. This establishes methods and controls for locating secret representations, but it asks whether knowledge is recoverable, not whether it causally shapes prose.
+
+**Dong et al. (2025), Emergent Response Planning.** Linear/MLP probes predict response length, reasoning steps, final answers, correctness, consistency, and animal characters from prompt-end residual states across eight 7–8B models. Decodability scales and often follows a high–low–high temporal trajectory. Greedy decoding and prompt correlations limit causal interpretation. For this project the important contribution is the reusable activation-collection/probing pipeline and the explicit warning that decodability alone is correlational.
+
+**Wu et al. (2024), FutureGPT2.** Myopic training removes gradients from future-token losses to earlier computations. Synthetic tasks show necessary “pre-caching,” whereas small-model natural-language results show only a modest myopia gap and near-zero local bonus, consistent with semantic breadcrumbs rather than deliberate plans. The gap grows with Pythia scale up to 2.8B. Thus an outline might reduce deliberate pre-caching without removing ordinary associative breadcrumbs; behavioral and activation measurements must be collected together.
+
+**Luo et al. (2026), Stable Internal Beliefs.** Branch probes during 20-questions games find that once a target belief drifts it nearly always remains drifted, and KL-to-initial-belief fine-tuning reduces drift. The “internal belief” is inferred behaviorally, so instability may partly reflect the probe response. This motivates measuring the secret with both activation probes and behavioral counterfactuals.
+
+**Baldelli et al. (2026), Private Working Memory.** A formal result shows that a persistent private state cannot be guaranteed when all durable state is exposed through a public transcript. Hangman and diagnostic tasks improve with explicit private-memory channels. This is relevant boundary-setting: private state solves a multi-turn memory architecture problem, while the present question concerns offloading prose planning into a public outline.
+
+### Narrative Planning
+
+**Xie & Riedl (2024), Suspenseful Stories.** Their pipeline separates background generation, iterative action–failure plotting, and detail elaboration with planted clues and delayed explanations. Human evaluation favors the full method over direct ChatGPT generation for suspense (84.9%), novelty (76.6%), and enjoyment (67.9%), while ablations show both outline and detail stages matter. This is direct evidence that plan/prose separation changes narrative behavior. However, every stage is model-generated; it does not independently manipulate what information the plan contains. The proposed experiment therefore needs secret-blind, secret-aware, and self-generated outlines.
+
+## Common Methodologies and Baselines
+
+The literature suggests four complementary measurement families:
+
+- **Matched behavioral controls:** secret-present versus no-secret, ordinary suppression versus active hiding, and real-secret versus decoy. Hold story brief, length target, model, and decoding settings fixed.
+- **Blinded discrimination:** order-balanced 2AFC inference is more sensitive than literal-string checks and avoids requiring an exhaustive paraphrase ontology. Exact/free guesses add ecological validity.
+- **Representation probes:** collect residual streams at prompt end and throughout generation, use simple preregistered classifiers, evaluate on held-out secrets, and include shuffled labels and prompt-only baselines.
+- **Causal interventions:** ablate or project out a learned direction, compare against norm-matched random/unrelated directions, and jointly measure target reduction and utility damage.
+
+Standard baselines should be: no secret, secret with no outline, secret-blind fixed outline, secret-aware fixed outline, self-generated outline, active hiding, and decoy. Random subspace interventions and sign-reversed steering are essential for the white-box study. A model-size sweep is secondary because prior work already finds larger or more capable models leak more.
+
+## Evaluation Metrics
+
+The primary endpoint should be 2AFC secret-identification accuracy with candidate order counterbalanced. Analyze it with mixed-effects logistic regression using outline condition and candidate order as fixed effects and secret/story brief as random effects. Report effect sizes and bootstrap confidence intervals, not only significance.
+
+Secondary leakage metrics are exact secret guess, top-k guess, calibrated judge log odds, and matched semantic similarity. Mechanism metrics are cross-validated secret-probe accuracy/AUROC, layerwise decodability, and trial-level association between decodability and leakage. Intervention success requires both reduced decodability and reduced behavioral leakage. Utility metrics should cover plan adherence, coherence, suspense/foreshadowing quality, diversity, length, and refusal rate. Layer/time scans require false-discovery correction or a preregistered region of interest.
+
+## Datasets in the Literature
+
+The downloaded Semantic Leakage suite supplies 109 handcrafted semantic examples and categories. ReboundBench supplies 5,000 single-token forbidden-concept prompts plus 500 matched negative/neutral/positive prompts. ConfAIde supplies privacy-sensitivity, contextual-integrity, sharing, and meeting-summary scenarios. None directly implements the required crossed story-outline experiment, so the primary dataset should be generated from screened concrete secrets and reusable story briefs. Existing datasets are best used for concept seeding, controls, and transfer validation.
+
+## Gaps and Opportunities
+
+1. No paper tests whether an externally supplied outline reduces involuntary story leakage while holding secret exposure constant.
+2. Existing planning probes and secret elicitation studies are correlational; story-level causal mediation has not been shown.
+3. Active hiding can invert or amplify signal, so “lower semantic similarity” alone is not evidence that information was removed.
+4. Most classifiers split by example, not by secret identity, allowing concept-specific memorization to inflate apparent generalization.
+5. Privacy and narrative quality are rarely evaluated jointly; an intervention can appear safe by making prose generic, incoherent, or refusal-heavy.
+
+## Recommendations for the Experiment
+
+Follow the three ranked directions in `planning.md`. Begin with a crossed behavioral factorial using an open 7–14B instruction model and one frontier API replication. The decisive contrast is no outline versus an externally supplied secret-blind outline. Then collect tokenwise residual activations on the same trials and test whether reduced decodability mediates any behavioral effect. Finally, remove or steer the secret subspace during prose generation with random-direction controls.
+
+Use 30–50 secrets across semantic categories, at least eight reusable briefs per secret, and held-out-secret splits. Use multiple independent judges and a small blinded human audit. Preserve full prompts, outlines, seeds, model revisions, and decoding parameters. Treat semantic similarity and forbidden-token rebound as supporting metrics only; the central claim requires story-level inference and quality-preserving causal intervention.
+
+## Key Citations
+
+- Holtzman & West, 2026, [arXiv:2605.10794](https://arxiv.org/abs/2605.10794) — primary involuntary story-leakage result.
+- Gonen et al., 2025, [arXiv:2408.06518](https://arxiv.org/abs/2408.06518) — semantic-leakage definition and matched evaluation.
+- Fairoze et al., 2026, [arXiv:2608.19857](https://arxiv.org/abs/2608.19857) — adaptive decoding and suppression hypothesis.
+- Dong et al., 2025, [arXiv:2502.06258](https://arxiv.org/abs/2502.06258) — response-planning activation probes.
+- Cywiński et al., 2025, [arXiv:2510.01070](https://arxiv.org/abs/2510.01070) — public secret-elicitation benchmark.
+- Xie & Riedl, 2024, [arXiv:2402.17119](https://arxiv.org/abs/2402.17119) — explicit story plan/prose separation.
+
+
+════════════════════════════════════════════════════════════════════════════════
+                          PAPER REQUIREMENTS
+════════════════════════════════════════════════════════════════════════════════
+
+Generate a complete academic paper with the following structure:
+
+1. TITLE
+   - Clear, specific, informative
+   - Should convey main finding or contribution
+
+2. AUTHOR
+   - Use this exact author line in the \author{} block: Ari Holtzman and NeuriCo
+
+3. ABSTRACT (150-250 words)
+   - Problem statement
+   - Approach
+   - Key results
+   - Significance
+
+4. INTRODUCTION
+   - Research problem and motivation
+   - Gap in existing work
+   - Our contribution (be specific)
+   - Paper organization
+
+5. RELATED WORK
+   - Organized by theme/approach
+   - Position our work relative to prior work
+   - Cite papers from literature review
+
+6. METHODOLOGY
+   - Clear description of approach
+   - Experimental setup
+   - Datasets used
+   - Evaluation metrics
+   - Baselines
+
+7. RESULTS
+   - Present results with tables and figures
+   - Statistical analysis
+   - Comparison to baselines
+   - Ablation studies (if applicable)
+
+8. DISCUSSION
+   - Interpretation of results
+   - Limitations
+   - Broader implications
+
+9. CONCLUSION
+   - Summary of contributions
+   - Key findings
+   - Future work
+
+10. REFERENCES
+   - BibTeX format
+   - All cited papers
+
+════════════════════════════════════════════════════════════════════════════════
+                          OUTPUT FORMAT
+════════════════════════════════════════════════════════════════════════════════
+
+Create a MODULAR LaTeX project with the following directory structure:
+
+paper_draft/
+├── main.tex              # Main file that imports all sections
+├── references.bib        # BibTeX references
+├── sections/
+│   ├── abstract.tex      # Abstract content
+│   ├── introduction.tex  # Introduction section
+│   ├── related_work.tex  # Related work section
+│   ├── methodology.tex   # Methodology section
+│   ├── results.tex       # Results section
+│   ├── discussion.tex    # Discussion section
+│   └── conclusion.tex    # Conclusion section
+├── figures/              # Directory for any generated figures
+├── tables/               # Directory for complex standalone tables
+└── appendix/             # Directory for appendix sections (if needed)
+
+INSTRUCTIONS:
+1. First, create the directory structure above (mkdir -p paper_draft/sections paper_draft/figures paper_draft/tables paper_draft/appendix)
+2. Write main.tex using the EXACT preamble for NEURIPS:
+
+   \documentclass{article}
+   \usepackage[final]{neurips_2025}  % NEURIPS style (neurips_2025.sty is in paper_draft/)
+   \usepackage[hidelinks]{hyperref}  % REQUIRED: clickable links
+   \usepackage{booktabs}  % REQUIRED: professional tables
+   \usepackage{graphicx}
+   \usepackage{amsmath,amssymb}
+
+   % Import command files
+   \input{commands/math}
+   \input{commands/general}
+   \input{commands/macros}
+
+   % Use this bibliography style:
+   \bibliographystyle{plainnat}
+
+   \author{Ari Holtzman and NeuriCo}
+
+   - Use \input{sections/...} to include each section
+   - Use \bibliography{references} for references
+3. Write each section file with COMPLETE content (no placeholders)
+4. Each section file should include its \section{} command
+5. Write references.bib with all citations in BibTeX format
+6. After writing all files, compile the paper:
+   cd paper_draft && pdflatex -interaction=nonstopmode main.tex && bibtex main && pdflatex -interaction=nonstopmode main.tex && pdflatex -interaction=nonstopmode main.tex
+
+This modular structure allows humans to easily:
+- Edit individual sections without navigating a large file
+- Track changes per section
+- Reuse sections across different paper versions
+
+════════════════════════════════════════════════════════════════════════════════
+                          QUALITY REQUIREMENTS
+════════════════════════════════════════════════════════════════════════════════
+
+- Academic tone throughout
+- All claims must be supported by data from the experiment report
+- Proper citations using \cite{} commands
+- Clear figures and tables with proper captions
+- NO placeholder text - every section must have real content
+- The paper MUST compile without errors
+- If compilation fails, debug and fix the LaTeX errors
+
+════════════════════════════════════════════════════════════════════════════════
+                          LAB WRITING STYLE
+════════════════════════════════════════════════════════════════════════════════
+
+Follow these lab-specific conventions to match our paper style:
+
+1. LANGUAGE STYLE:
+   - Use active voice: "We propose", "We examine", "We focus on"
+   - Be direct and confident: "Our main question is...", "We hypothesize that..."
+   - State things clearly and simply - prefer plain language over jargon
+   - Use bold questions as paragraph organizers: {\bf what is X?}
+   - Include specific quantitative claims: "8.97% over baseline"
+   - Avoid fancy wording: "utilize" → "use", "facilitate" → "help"
+
+2. INTRODUCTION STRUCTURE:
+   - Engaging hook (get to the point quickly)
+   - Problem importance
+   - Gap identification
+   - Your approach with method figure reference
+   - Quantitative preview of results
+   - Contribution bullets (3-4 items, action verbs)
+
+3. CONTRIBUTION LISTS:
+   \begin{itemize}[leftmargin=*,itemsep=0pt,topsep=0pt]
+       \item We propose...
+       \item We conduct...
+       \item We complement...
+   \end{itemize}
+
+4. MODULAR COMMANDS STRUCTURE:
+   Command templates are pre-copied to paper_draft/commands/:
+   - math.tex: Math notation macros
+   - general.tex: Formatting macros
+   - macros.tex: Project-specific term definitions (customize this for your paper)
+
+   In main.tex, include:
+   \input{commands/math}
+   \input{commands/general}
+   \input{commands/macros}
+
+5. REFERENCE CONVENTIONS:
+   Use reference macros from math.tex:
+   - \figref{fig:name} for "figure 1" (lowercase, in-sentence)
+   - \Figref{fig:name} for "Figure 1" (capitalized, start of sentence)
+   - \secref{sec:name} for "section 2"
+
+6. TEXT FORMATTING:
+   - Use \para{Header text} for bold paragraph headers
+   - Define method/dataset names with \textsc and \xspace:
+     \newcommand{\methodname}{\textsc{MethodName}\xspace}
+
+7. TABLE FORMATTING:
+   - Use booktabs package (no vertical lines)
+   - Use \resizebox{\textwidth}{!}{...} for wide tables
+   - Use @{} to remove padding at table edges
+   - Use \cmidrule(lr){x-y} for sub-headers
+   - Use \textsc{} for dataset/method names in headers
+   - Bold best results with {\bf ...}
+
+8. FIGURE FORMATTING:
+   - Use 0.32\textwidth for 3-column subfigures
+   - Use 0.95\linewidth for full-width figures
+   - Use \input{figures/legend} for shared legends
+   - Write self-contained captions explaining key observations
+
+9. RESULTS PRESENTATION:
+   - Define \increase and \decrease for colored arrows (green up, red down)
+   - Bold best results in tables
+   - Report confidence intervals when available
+
+10. ALGORITHM STYLING:
+    - Use algpseudocode with [noend]
+    - Use \triangleright for comments
+
+11. HYPERLINKS (REQUIRED):
+    - Always use \usepackage[hidelinks]{hyperref} or with colored links
+    - All citations, section refs, figure refs, table refs must be clickable
+    - This is essential for reader navigation
+
+════════════════════════════════════════════════════════════════════════════════
+                          WORKFLOW: REVIEW AND REFLECT
+════════════════════════════════════════════════════════════════════════════════
+
+Before calling finish, you MUST complete these review steps:
+
+1. REVIEW RESOURCES (at the start):
+   - Read .codex/skills/paper-writer/SKILL.md for detailed guidance
+   - Study templates/paper_writing/lab_style_guide.md for style conventions
+   - Browse paper_examples/ for formatting and language patterns
+
+2. SELF-REFLECTION (before finishing):
+   After writing all sections, review your work against these criteria:
+
+   LANGUAGE CHECK:
+   - [ ] Is the writing clear and jargon-free?
+   - [ ] Are claims specific with quantitative support?
+   - [ ] Is active voice used throughout?
+
+   FORMATTING CHECK:
+   - [ ] Does main.tex include \input{commands/math}, \input{commands/general}, \input{commands/macros}?
+   - [ ] Is hyperref package included for clickable references?
+   - [ ] Do tables use booktabs (no vertical lines)?
+   - [ ] Are best results bolded in tables?
+   - [ ] Are figures/tables properly captioned?
+
+   STRUCTURE CHECK:
+   - [ ] Does introduction follow: hook → importance → gap → approach → preview → contributions?
+   - [ ] Are contribution bullets specific with action verbs?
+   - [ ] Does the paper compile without errors?
+
+3. FIX ISSUES:
+   - Address any issues found in the self-reflection
+   - Re-compile and verify the PDF looks correct
+
+Only after completing this review should you consider the paper finished.

@@ -1,0 +1,10 @@
+# Exclude downloaded data files; reproduce them from README.md.
+*
+
+# Keep documentation, download metadata, and small samples.
+!.gitignore
+!README.md
+!**/README.md
+!**/samples/
+!**/download.sh
+!**/download_instructions.txt
